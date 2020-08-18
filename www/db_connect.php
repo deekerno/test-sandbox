@@ -6,7 +6,13 @@ $pass = 'tiger';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-$pdo = new PDO($dsn, $user, $pass);
+
+try {
+    $pdo = new PDO($dsn, $user, $pass);
+} catch (PDOException $e) {
+    $error = $e->getMessage();
+    echo $error;
+}
 
 session_start();
 ?>
