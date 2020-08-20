@@ -21,17 +21,19 @@
             </div>
         </section>
         <section>
-            <div class="tasks"></div>
+            <div id="tasks"></div>
             <div class="modal">
                 <div class="modal-background"></div>
                 <div class="modal-content">
-                    <input class="input is-focused" type="text" name="task-text" placeholder="Updated task text" id="updated-task-text" autocomplete="off">
-                    <button class="update-task button is-primary" type="submit" name="update-task" id="update-task">Update</button>
+                    <form id="edit-form">
+                        <input class="input is-focused" type="text" name="task-text" placeholder="Updated task text" id="updated-task-text" autocomplete="off" required="true">
+                        <button class="update-task button is-primary" type="submit" name="update-task" id="update-task">Update</button>
+                    </form>
                 </div>
                 <button class="modal-close is-large" aria-label="close"></button>
             </div>
             <form id="task-form">
-                <input class="input is-focused" type="text" name="task-text" placeholder="What to do?" id="task-text" autocomplete="off">
+                <input class="input is-focused task-text" type="text" name="task-text" placeholder="What to do?" id="task-text" autocomplete="off" required="true">
                 <button class="new-task button is-primary" type="submit" name="new-task" id="new-task">Submit</button>
             </form>
         </section>
@@ -41,13 +43,15 @@
 <script>
     $(document).ready(function() {
         loadFreshTasks();
-        $(document).on('click', '.new-task', function(){
+
+        $(document).on('submit', '#task-form', function(e){
+            e.preventDefault();
             task_text = $('#task-text').val();
             $.ajax({
                 url: 'add_task.php',
                 type: 'POST',
                 data: {
-                    text: task_text,
+                    'text': task_text,
                 },
                 success: function(response){
                     loadFreshTasks();
@@ -56,37 +60,38 @@
             });
         });
 
-        $(document).on('click', '.edit-btn', function(){
-            $('.modal').addClass('is-active')
+        $(document).on('click', '#edit-btn', function(){
+            edited_id = $(this).attr('internal-id');
+            $('.modal').addClass('is-active');
+            $(document).on('submit', '#edit-form', function(){
+                updated_task_text = $('#updated-task-text').val();
+
+                $.ajax({
+                    url: 'edit_task.php',
+                    type: 'POST',
+                    data: {
+                        'task': updated_task_text,
+                        'internal-id': edited_id,
+                    },
+                    success: function(response){
+                        loadFreshTasks();
+                        $('.modal').removeClass('is-active')
+                    }
+                });
+            });
         });
+
         $(document).on('click', '.modal-close', function(){
             $('.modal').removeClass('is-active')
         });
 
-        $(document).on('click', '.update-task', function(){
-            updated_task_text = $('#updated_task_text').val();
-            edited_id = $(this).attr('internal-id');
-            $.ajax({
-                url: 'edit_task.php',
-                type: 'POST',
-                data: {
-                    task: updated_task_text,
-                    internal-id: edited_id,
-                },
-                success: function(response){
-                    loadFreshTasks();
-                    $('.modal').removeClass('is-active')
-                }
-            });
-        });
-
-        $(document).on('click', '.remove-btn', function(){
+        $(document).on('click', '#remove-btn', function(){
             removed_id = $(this).attr('internal-id');
             $.ajax({
                 url: 'remove_task.php',
                 type: 'POST',
                 data: {
-                    internal-id: removed_id,
+                    'internal-id': removed_id,
                 },
                 success: function(response){
                     loadFreshTasks();
@@ -94,10 +99,23 @@
             });
         });
 
+        $(document).on('click', '#completed-btn', function(){
+            removed_id = $(this).attr('internal-id');
+            $.ajax({
+                url: 'complete_task.php',
+                type: 'POST',
+                data: {
+                    'internal-id': removed_id,
+                },
+                success: function(response){
+                    loadFreshTasks();
+                }
+            });
+        });
 
         function loadFreshTasks() {
             $.get("get_tasks.php", {}, function(data, status) {
-                $(".tasks").html(data);
+                $("#tasks").html(data);
             });
         };
     });
